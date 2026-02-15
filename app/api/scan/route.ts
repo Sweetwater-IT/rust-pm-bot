@@ -26,10 +26,13 @@ interface ScanResponse {
 }
 
 export async function GET(request: NextRequest) {
+  const requestId = crypto.randomUUID().slice(0, 8);
+  console.log(`[${requestId}] Edge scan request started`);
+
   try {
     const url = 'https://gamma-api.polymarket.com/markets?active=true&limit=50&tags=crypto&order_by=created_at_desc';
+    console.log(`[${requestId}] Scanning markets from: ${url}`);
 
-    console.log('Edge scanning markets from:', url);
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -38,11 +41,12 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
+      console.error(`[${requestId}] Market API error: ${response.status} ${response.statusText}`);
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
     const markets: GammaMarket[] = await response.json();
-    console.log(`Edge fetched ${markets.length} markets`);
+    console.log(`[${requestId}] Fetched ${markets.length} markets`);
 
     // Filter for short-duration crypto markets (5-min and 15-min BTC/ETH/SOL)
     const shortTermMarkets: MarketSummary[] = markets
@@ -62,18 +66,32 @@ export async function GET(request: NextRequest) {
         end_date_iso: market.end_date_iso,
       }));
 
-    console.log(`Edge filtered to ${shortTermMarkets.length} short-term crypto markets`);
+    console.log(`[${requestId}] Filtered to ${shortTermMarkets.length} short-term crypto markets`);
 
     const result: ScanResponse = {
       markets: shortTermMarkets,
       count: shortTermMarkets.length,
     };
 
+    console.log(`[${requestId}] Edge scan request completed successfully`);
     return NextResponse.json(result);
+
   } catch (error) {
-    console.error('Edge scan failed:', error);
+    const err = error as Error;
+    console.error(`[${requestId}] Edge scan failed:`, {
+      error: err.message,
+      stack: err.stack,
+      url: request.url,
+      userAgent: request.headers.get('user-agent'),
+      timestamp: new Date().toISOString()
+    });
+
     return NextResponse.json(
-      { error: 'Failed to scan markets' },
+      {
+        error: 'Failed to scan markets',
+        requestId,
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }
