@@ -97,7 +97,7 @@ async fn scan_handler() -> Result<axum::Json<ScanResponse>, axum::http::StatusCo
 
 async fn scan_markets() -> anyhow::Result<ScanResponse> {
     let client = Client::new();
-    let url = "https://gamma-api.polymarket.com/markets?active=true&limit=50&tags=crypto&order_by=created_at_desc";
+    let url = "https://gamma-api.polymarket.com/markets?active=true&tags=crypto&order_by=created_at_desc";
 
     log::info!("Fetching markets from: {}", url);
     let response = client.get(url).send().await?;

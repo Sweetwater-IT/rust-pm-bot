@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   console.log(`[${requestId}] Edge scan request started`);
 
   try {
-    const url = 'https://gamma-api.polymarket.com/markets?active=true&limit=50&tags=crypto&order_by=created_at_desc';
+    const url = 'https://gamma-api.polymarket.com/markets?active=true&tags=crypto&order_by=created_at_desc';
     console.log(`[${requestId}] Scanning markets from: ${url}`);
 
     const response = await fetch(url, {
